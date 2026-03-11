@@ -1,0 +1,537 @@
+<!-- templates/analysis.html -->
+{% extends 'base.html' %}
+
+{% block title %}Flood Data Analysis{% endblock %}
+
+{% block content %}
+<!-- HIGH ALERT POPUP MODAL -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    HIGH FLOOD ALERT AREAS
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alertContent">
+                <div class="text-center">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading high-risk areas...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" onclick="viewAllAlerts()">View All Alerts</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Flood Detection Analysis & Search
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="searchForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                Region/Location ID
+                                <i class="fas fa-info-circle text-info" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Enter location ID (e.g., 0001, 0004) or name"></i>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="region" 
+                                   id="regionInput"
+                                   placeholder="e.g., 0001, 0004"
+                                   list="regionList">
+                            <datalist id="regionList">
+                                <!-- Will be populated dynamically -->
+                            </datalist>
+                            <small class="form-text text-muted">Format: 0001, 0002, etc.</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Date From</label>
+                            <input type="date" class="form-control" name="date_from" id="dateFrom">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Date To</label>
+                            <input type="date" class="form-control" name="date_to" id="dateTo">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Satellite Type</label>
+                            <select class="form-select" name="satellite">
+                                <option value="s1">Sentinel-1 SAR</option>
+                                <option value="s2">Sentinel-2 Optical</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Minimum Flood %</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   name="min_flood" 
+                                   placeholder="0-100" 
+                                   min="0" 
+                                   max="100"
+                                   id="minFlood">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Detection Method</label>
+                            <select class="form-select" name="method">
+                                <option value="all">All Methods</option>
+                                <option value="autoencoder">Autoencoder</option>
+                                <option value="kmeans">K-Means</option>
+                                <option value="gmm">GMM</option>
+                                <option value="hdbscan">HDBSCAN</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Sort By</label>
+                            <select class="form-select" name="sort_by">
+                                <option value="flood_desc">Flood % (High to Low)</option>
+                                <option value="flood_asc">Flood % (Low to High)</option>
+                                <option value="date_desc">Date (Newest)</option>
+                                <option value="date_asc">Date (Oldest)</option>
+                                <option value="confidence">Confidence</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Search & Analyze
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Real-time search help -->
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Search Tips:</strong> 
+                    Enter location ID in format: 0001, 0002, etc. 
+                    Leave filters empty to see all flood events. 
+                    Use minimum flood % to filter high-risk areas only.
+                </div>
+            </div>
+        </div>
+        
+        {% if search_performed %}
+        <!-- Results Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>Search Results 
+                    <span class="badge bg-light text-dark">{{ result_count|default:results|length }} found</span>
+                </h5>
+                {% if results %}
+                <button class="btn btn-sm btn-light" onclick="exportAllResults()">
+                    <i class="fas fa-download me-2"></i>Export All
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if results %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" id="resultsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Location ID</th>
+                                <th>Date</th>
+                                <th>Flood %</th>
+                                <th>Satellite</th>
+                                <th>Method</th>
+                                <th>Confidence</th>
+                                <th>Severity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr class="{% if result.flood_percentage >= 50 %}table-danger{% elif result.flood_percentage >= 20 %}table-warning{% endif %}">
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <i class="fas fa-map-marker-alt text-primary me-1"></i>
+                                    <strong>{{ result.location_id }}</strong>
+                                </td>
+                                <td>{{ result.date }}</td>
+                                <td>
+                                    <strong class="{% if result.flood_percentage >= 50 %}severity-high{% elif result.flood_percentage >= 20 %}severity-medium{% else %}severity-low{% endif %}">
+                                        {{ result.flood_percentage }}%
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ result.satellite }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ result.method }}</span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px; min-width: 80px;">
+                                        <div class="progress-bar bg-{% if result.confidence >= 0.8 %}success{% elif result.confidence >= 0.6 %}warning{% else %}danger{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ result.confidence|floatformat:0 }}%">
+                                            {{ result.confidence|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if result.flood_percentage < 20 %}
+                                    <span class="badge bg-success">Low</span>
+                                    {% elif result.flood_percentage < 50 %}
+                                    <span class="badge bg-warning text-dark">Medium</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">High</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="viewDetails('{{ result.location_id }}', '{{ result.date }}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" 
+                                                onclick="exportResult({{ forloop.counter0 }}, '{{ result.location_id }}', '{{ result.date }}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Visualizations -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-bar me-2"></i>Flood Distribution by Location
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="regionChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-line me-2"></i>Timeline Analysis
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="timelineChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No results found matching your search criteria. 
+                    <strong>Tips:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Check your location ID format (should be like: 0001, 0002)</li>
+                        <li>Try widening your date range</li>
+                        <li>Lower the minimum flood percentage filter</li>
+                        <li>Leave all fields empty to see all data</li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Initial State -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>Dataset Overview & Search Guide
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-lightbulb me-2"></i>How to Search</h5>
+                    <p>Use the search form above to find flood detection data:</p>
+                    <ul>
+                        <li><strong>Location ID:</strong> Enter 4-digit format (e.g., 0001, 0004, 0010)</li>
+                        <li><strong>Date Range:</strong> Select specific time periods</li>
+                        <li><strong>Minimum Flood %:</strong> Filter by severity (0-100)</li>
+                        <li><strong>Leave all empty</strong> to see all available data</li>
+                    </ul>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-satellite fa-3x text-primary mb-3"></i>
+                                <h5>Sentinel-1 SAR</h5>
+                                <p class="text-muted">All-weather radar imaging</p>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                                <h5>Real-time Analysis</h5>
+                                <p class="text-muted">Live flood monitoring</p>
+                                <span class="badge bg-success">Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-database fa-3x text-info mb-3"></i>
+                                <h5>Historical Data</h5>
+                                <p class="text-muted">Archive analysis</p>
+                                <span class="badge bg-info">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(el => new bootstrap.Tooltip(el));
+    
+    // Load high alert areas on page load
+    loadHighAlerts();
+    
+    // Load available regions for autocomplete
+    loadAvailableRegions();
+});
+
+// HIGH ALERT POPUP FUNCTION
+function loadHighAlerts() {
+    fetch('/api/?endpoint=statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.recent_detections && data.recent_detections.length > 0) {
+                // Show modal with high alert areas
+                showHighAlertModal(data.recent_detections);
+            }
+        })
+        .catch(error => console.error('Error loading alerts:', error));
+}
+
+function showHighAlertModal(alerts) {
+    const alertContent = document.getElementById('alertContent');
+    
+    let html = '<div class="alert alert-danger"><strong>Attention:</strong> High flood risk detected in the following areas:</div>';
+    html += '<div class="list-group">';
+    
+    alerts.forEach((alert, index) => {
+        html += `
+            <div class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                        Location ${alert.location_id}
+                    </h5>
+                    <span class="badge bg-danger">High Risk</span>
+                </div>
+                <p class="mb-1">Flood detected: ${alert.percentage}% coverage</p>
+                <small class="text-muted">Date: ${alert.date}</small>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    alertContent.innerHTML = html;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('alertModal'));
+    modal.show();
+}
+
+function viewAllAlerts() {
+    // Redirect to analysis with high flood filter
+    document.getElementById('minFlood').value = 50;
+    document.getElementById('searchForm').submit();
+}
+
+// Load available regions for autocomplete
+function loadAvailableRegions() {
+    fetch('/api/?endpoint=statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.recent_detections) {
+                const datalist = document.getElementById('regionList');
+                const uniqueIds = new Set();
+                
+                data.recent_detections.forEach(item => {
+                    if (item.location_id && !uniqueIds.has(item.location_id)) {
+                        uniqueIds.add(item.location_id);
+                        const option = document.createElement('option');
+                        option.value = item.location_id;
+                        datalist.appendChild(option);
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Error loading regions:', error));
+}
+
+function viewDetails(locationId, date) {
+    alert(`Viewing details for Location ${locationId} on ${date}\n\nThis would show:\n- Satellite imagery\n- Flood extent maps\n- Historical comparison\n- Risk assessment`);
+}
+
+function exportResult(index, locationId, date) {
+    alert(`Exporting data for Location ${locationId}\n\nDate: ${date}\n\nDownload will include:\n- Raw data (CSV)\n- Analysis report (PDF)\n- Maps (PNG)`);
+}
+
+function exportAllResults() {
+    alert('Exporting all search results...\n\nThis will create:\n- Complete dataset (CSV)\n- Summary report (PDF)\n- All visualizations');
+}
+
+{% if results %}
+// Create visualizations
+document.addEventListener('DOMContentLoaded', function() {
+    // Region chart
+    const regionCtx = document.getElementById('regionChart');
+    if (regionCtx) {
+        const locationIds = [{% for r in results %}'{{ r.location_id }}',{% endfor %}];
+        const floodPercentages = [{% for r in results %}{{ r.flood_percentage }},{% endfor %}];
+        
+        new Chart(regionCtx, {
+            type: 'bar',
+            data: {
+                labels: locationIds.slice(0, 10),
+                datasets: [{
+                    label: 'Flood Percentage',
+                    data: floodPercentages.slice(0, 10),
+                    backgroundColor: floodPercentages.slice(0, 10).map(val => 
+                        val >= 50 ? 'rgba(220, 53, 69, 0.7)' : 
+                        val >= 20 ? 'rgba(255, 193, 7, 0.7)' : 
+                        'rgba(40, 167, 69, 0.7)'
+                    ),
+                    borderColor: floodPercentages.slice(0, 10).map(val => 
+                        val >= 50 ? 'rgb(220, 53, 69)' : 
+                        val >= 20 ? 'rgb(255, 193, 7)' : 
+                        'rgb(40, 167, 69)'
+                    ),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Top 10 Flood-Affected Locations'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Flood Coverage (%)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Location ID'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Timeline chart
+    const timelineCtx = document.getElementById('timelineChart');
+    if (timelineCtx) {
+        const dates = [{% for r in results %}'{{ r.date }}',{% endfor %}];
+        const floodPercentages = [{% for r in results %}{{ r.flood_percentage }},{% endfor %}];
+        
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Flood Percentage Over Time',
+                    data: floodPercentages,
+                    fill: true,
+                    borderColor: 'rgb(13, 110, 253)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    title: {
+                        display: true,
+                        text: 'Flood Trend Analysis'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Flood Coverage (%)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+{% endif %}
+</script>
+
+<style>
+.severity-low { color: #28a745; font-weight: bold; }
+.severity-medium { color: #ffc107; font-weight: bold; }
+.severity-high { color: #dc3545; font-weight: bold; }
+
+#resultsTable tbody tr:hover {
+    transform: scale(1.01);
+    transition: transform 0.2s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+    border-left: 4px solid #dc3545;
+}
+</style>
+{% endblock %}

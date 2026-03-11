@@ -1,0 +1,484 @@
+{% extends 'flood_app/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Upload SAR Images — Flood Detection System{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #112240;
+    --navy-light: #1a3358;
+    --slate: #4a6080;
+    --border: #c8d4e0;
+    --accent: #1a6eb5;
+    --accent-light: #e8f1fa;
+    --success: #1a7a4a;
+    --success-bg: #e8f5ee;
+    --text-primary: #0a1628;
+    --text-secondary: #4a6080;
+    --text-muted: #7a90a8;
+    --surface: #ffffff;
+    --surface-alt: #f4f7fb;
+    --rule: #d0dae6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #edf1f7;
+    color: var(--text-primary);
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    background: var(--navy);
+    border-bottom: 3px solid var(--accent);
+    padding: 28px 0 22px;
+    margin-bottom: 32px;
+  }
+  .page-header .badge-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #7ab3d8;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+  .page-header p {
+    font-size: 13px;
+    color: #8aaec8;
+    margin: 0;
+  }
+
+  /* ── Layout ── */
+  .upload-container { max-width: 860px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* ── Notice Bar ── */
+  .notice-bar {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: #1a3a5e;
+  }
+  .notice-bar svg { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Section Panel ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .panel-header {
+    background: var(--navy-mid);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-header .panel-icon {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .panel-header .panel-icon.before { background: #2a4a70; color: #7ab3d8; }
+  .panel-header .panel-icon.after  { background: #1a4a35; color: #5ac890; }
+  .panel-header h2 {
+    font-size: 14px; font-weight: 600; color: #fff; margin: 0; letter-spacing: 0.2px;
+  }
+  .panel-header .panel-sub {
+    font-size: 11px; color: #7a9ab8; margin: 0; font-family: 'IBM Plex Mono', monospace;
+  }
+  .panel-header .req-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 1px;
+    background: rgba(26,110,181,0.25);
+    color: #7ab3d8;
+    padding: 3px 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── Grid ── */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0;
+  }
+  .input-cell {
+    padding: 18px 20px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .input-cell:nth-child(even) { border-right: none; }
+  .input-cell:nth-last-child(-n+2) { border-bottom: none; }
+
+  .input-cell label.field-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .field-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-required { background: var(--accent); }
+  .dot-optional { background: var(--success); }
+
+  .field-label .pill {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.5px;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+  .pill-req { background: #e6f0fa; color: #1a6eb5; }
+  .pill-opt { background: var(--success-bg); color: var(--success); }
+
+  .field-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.45;
+  }
+
+  /* ── File Input ── */
+  .file-drop {
+    position: relative;
+    border: 1.5px dashed var(--border);
+    border-radius: 4px;
+    background: var(--surface-alt);
+    transition: border-color .15s, background .15s;
+    cursor: pointer;
+    text-align: center;
+    padding: 16px 12px;
+  }
+  .file-drop:hover, .file-drop.dragover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .file-drop input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .file-drop .drop-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+  }
+  .file-drop .drop-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: block;
+  }
+  .file-drop .drop-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .file-drop .file-name {
+    display: none;
+    font-size: 11px;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 6px;
+    word-break: break-all;
+  }
+
+  /* ── Submit Panel ── */
+  .submit-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .submit-info { font-size: 12px; color: var(--text-muted); }
+  .submit-info strong { color: var(--text-secondary); display: block; font-size: 13px; margin-bottom: 2px; }
+
+  .btn-submit {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 11px 28px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .btn-submit:hover { background: var(--navy-light); }
+  .btn-submit svg { flex-shrink: 0; }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .input-grid { grid-template-columns: 1fr; }
+    .input-cell { border-right: none; }
+    .input-cell:nth-last-child(-n+2) { border-bottom: 1px solid var(--rule); }
+    .input-cell:last-child { border-bottom: none; }
+    .submit-panel { flex-direction: column; align-items: flex-start; }
+    .btn-submit { width: 100%; justify-content: center; }
+  }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="upload-container">
+    <span class="badge-tag">SAR Flood Detection System</span>
+    <h1>SAR Image Upload Portal</h1>
+    <p>Submit pre- and post-event satellite imagery for automated flood extent analysis</p>
+  </div>
+</div>
+
+<div class="upload-container">
+
+  <!-- Notice -->
+  <div class="notice-bar">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="6.5" stroke="#1a6eb5" stroke-width="1.2"/>
+      <rect x="7" y="6" width="1" height="5" rx=".5" fill="#1a6eb5"/>
+      <circle cx="7.5" cy="4.5" r=".7" fill="#1a6eb5"/>
+    </svg>
+    <span>Accepted format: <strong>.tif / .tiff</strong> only · Max 100 MB per file · VV and VH polarization images are required</span>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="uploadForm">
+    {% csrf_token %}
+
+    <!-- ── BEFORE FLOOD ── -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon before">▲</div>
+        <div>
+          <h2>Pre-Event Imagery</h2>
+          <p class="panel-sub">Before flood acquisition</p>
+        </div>
+        <span class="req-badge">VV + VH required</span>
+      </div>
+      <div class="input-grid">
+
+        <!-- VV Before -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-required"></span> VV Polarization
+            <span class="pill pill-req">Required</span>
+          </label>
+          <p class="field-desc">Vertical–vertical backscatter channel</p>
+          <div class="file-drop" id="drop-vv-before">
+            <input type="file" name="vv_before" accept=".tif,.tiff" onchange="showFileName(this,'vv-before-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="vv-before-name"></span>
+          </div>
+        </div>
+
+        <!-- VH Before -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-required"></span> VH Polarization
+            <span class="pill pill-req">Required</span>
+          </label>
+          <p class="field-desc">Vertical–horizontal backscatter channel</p>
+          <div class="file-drop" id="drop-vh-before">
+            <input type="file" name="vh_before" accept=".tif,.tiff" onchange="showFileName(this,'vh-before-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="vh-before-name"></span>
+          </div>
+        </div>
+
+        <!-- RGB Before -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-optional"></span> RGB Composite
+            <span class="pill pill-opt">Optional</span>
+          </label>
+          <p class="field-desc">Optical RGB image for visual reference</p>
+          <div class="file-drop" id="drop-rgb-before">
+            <input type="file" name="rgb_before" accept=".tif,.tiff" onchange="showFileName(this,'rgb-before-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="rgb-before-name"></span>
+          </div>
+        </div>
+
+        <!-- NDVI Before -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-optional"></span> NDVI Index
+            <span class="pill pill-opt">Optional</span>
+          </label>
+          <p class="field-desc">Vegetation index to improve classification</p>
+          <div class="file-drop" id="drop-ndvi-before">
+            <input type="file" name="ndvi_before" accept=".tif,.tiff" onchange="showFileName(this,'ndvi-before-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="ndvi-before-name"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── AFTER FLOOD ── -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon after">▼</div>
+        <div>
+          <h2>Post-Event Imagery</h2>
+          <p class="panel-sub">After flood acquisition</p>
+        </div>
+        <span class="req-badge">VV + VH required</span>
+      </div>
+      <div class="input-grid">
+
+        <!-- VV After -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-required"></span> VV Polarization
+            <span class="pill pill-req">Required</span>
+          </label>
+          <p class="field-desc">Vertical–vertical backscatter channel</p>
+          <div class="file-drop" id="drop-vv-after">
+            <input type="file" name="vv_image" accept=".tif,.tiff" onchange="showFileName(this,'vv-after-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="vv-after-name"></span>
+          </div>
+        </div>
+
+        <!-- VH After -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-required"></span> VH Polarization
+            <span class="pill pill-req">Required</span>
+          </label>
+          <p class="field-desc">Vertical–horizontal backscatter channel</p>
+          <div class="file-drop" id="drop-vh-after">
+            <input type="file" name="vh_image" accept=".tif,.tiff" onchange="showFileName(this,'vh-after-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="vh-after-name"></span>
+          </div>
+        </div>
+
+        <!-- RGB After -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-optional"></span> RGB Composite
+            <span class="pill pill-opt">Optional</span>
+          </label>
+          <p class="field-desc">Optical RGB image for visual reference</p>
+          <div class="file-drop" id="drop-rgb-after">
+            <input type="file" name="rgb_image" accept=".tif,.tiff" onchange="showFileName(this,'rgb-after-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="rgb-after-name"></span>
+          </div>
+        </div>
+
+        <!-- NDVI After -->
+        <div class="input-cell">
+          <label class="field-label">
+            <span class="dot dot-optional"></span> NDVI Index
+            <span class="pill pill-opt">Optional</span>
+          </label>
+          <p class="field-desc">Vegetation index to improve classification</p>
+          <div class="file-drop" id="drop-ndvi-after">
+            <input type="file" name="ndvi_image" accept=".tif,.tiff" onchange="showFileName(this,'ndvi-after-name')">
+            <div class="drop-icon">⬆</div>
+            <span class="drop-label">Choose file or drag here</span>
+            <span class="drop-sub">.tif / .tiff · max 100 MB</span>
+            <span class="file-name" id="ndvi-after-name"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-panel">
+      <div class="submit-info">
+        <strong>Ready to process</strong>
+        Analysis uses Random Forest, Gradient Boosting, SVM, and U-Net models
+      </div>
+      <button type="submit" class="btn-submit">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1v8M3.5 5.5 7 9l3.5-3.5M1.5 11h11" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Submit for Analysis
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  function showFileName(input, targetId) {
+    const el = document.getElementById(targetId);
+    if (input.files && input.files[0]) {
+      el.textContent = input.files[0].name;
+      el.style.display = 'block';
+      input.closest('.file-drop').style.borderColor = 'var(--accent)';
+      input.closest('.file-drop').style.background = 'var(--accent-light)';
+    }
+  }
+
+  // Drag-and-drop highlight
+  document.querySelectorAll('.file-drop').forEach(zone => {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', () => zone.classList.remove('dragover'));
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,396 @@
+
+
+{% extends 'flood_app/base.html' %}
+
+{% block title %}Analysis Results - SAR Flood Detection{% endblock %}
+
+{% block content %}
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root{
+  --navy:#0a1628;
+  --navy-mid:#112240;
+  --navy-light:#1a3358;
+  --accent:#1a6eb5;
+  --border:#c8d4e0;
+  --surface:#ffffff;
+  --surface-alt:#f4f7fb;
+  --text-muted:#7a90a8;
+}
+
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:#edf1f7;
+}
+
+.card{
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface);
+  margin-bottom:20px;
+}
+
+.card-header{
+  background:var(--navy-mid);
+  color:white;
+  padding:14px 18px;
+  font-weight:600;
+}
+
+.metric-card{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:18px;
+  text-align:center;
+}
+
+.metric-value{
+  font-size:26px;
+  font-weight:600;
+  color:var(--accent);
+}
+
+.metric-label{
+  font-size:12px;
+  color:var(--text-muted);
+}
+
+.table{
+  font-size:13px;
+}
+
+.progress{
+  height:8px;
+  background:#e7edf5;
+}
+
+.result-image{
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:var(--surface-alt);
+  padding:6px;
+}
+
+.btn-primary{
+  background:var(--navy);
+  border:none;
+  padding:10px 26px;
+  font-size:13px;
+  font-weight:600;
+}
+
+.btn-primary:hover{
+  background:var(--navy-light);
+}
+</style>
+
+
+<div class="row">
+<div class="col-12">
+
+<div class="card">
+<div class="card-header">
+
+<h3 class="mb-0">
+<i class="fas fa-chart-bar"></i>
+Flood Detection Analysis Results
+</h3>
+
+<small class="text-white-50">
+Analysis ID: {{ analysis.id }} |
+Date: {{ analysis.upload_date|date:"Y-m-d H:i" }}
+</small>
+
+</div>
+</div>
+
+</div>
+</div>
+
+
+
+<div class="row mt-4">
+
+<div class="col-md-3">
+<div class="metric-card">
+<div class="metric-value">{{ analysis.flood_area_km2|floatformat:2 }}</div>
+<div class="metric-label">Flood Area (km²)</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="metric-card">
+<div class="metric-value">{{ analysis.flood_percentage|floatformat:2 }}%</div>
+<div class="metric-label">Flood Coverage</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="metric-card">
+<div class="metric-value">
+<span class="badge bg-{{ analysis.get_severity_color }}">
+{{ analysis.flood_severity }}
+</span>
+</div>
+<div class="metric-label">Severity Level</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="metric-card">
+<div class="metric-value">{{ analysis.predicted_rainfall_mm|floatformat:1 }}</div>
+<div class="metric-label">Predicted Rainfall (mm)</div>
+</div>
+</div>
+
+</div>
+
+
+
+<div class="row">
+
+<div class="col-lg-6">
+
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0"><i class="fas fa-robot"></i> Classical ML Results</h5>
+<small class="text-white-50">Best Model: {{ analysis.best_ml_model }}</small>
+</div>
+
+<div class="card-body">
+
+<table class="table table-hover">
+
+<thead>
+<tr>
+<th>Metric</th>
+<th>Score</th>
+<th>Rating</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td><strong>Accuracy</strong></td>
+<td>{{ analysis.ml_accuracy|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-primary"
+style="width: {{ analysis.ml_accuracy|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>Precision</strong></td>
+<td>{{ analysis.ml_precision|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-success"
+style="width: {{ analysis.ml_precision|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>Recall</strong></td>
+<td>{{ analysis.ml_recall|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-info"
+style="width: {{ analysis.ml_recall|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>F1-Score</strong></td>
+<td>{{ analysis.ml_f1_score|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-warning"
+style="width: {{ analysis.ml_f1_score|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>IoU</strong></td>
+<td>{{ analysis.ml_iou|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-danger"
+style="width: {{ analysis.ml_iou|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+</tbody>
+</table>
+
+</div>
+</div>
+
+</div>
+
+
+
+<div class="col-lg-6">
+
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0"><i class="fas fa-brain"></i> Deep Learning Results</h5>
+<small class="text-white-50">Model: U-Net Semantic Segmentation</small>
+</div>
+
+<div class="card-body">
+
+<table class="table table-hover">
+
+<thead>
+<tr>
+<th>Metric</th>
+<th>Score</th>
+<th>Rating</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td><strong>Accuracy</strong></td>
+<td>{{ analysis.dl_accuracy|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-primary"
+style="width: {{ analysis.dl_accuracy|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>Precision</strong></td>
+<td>{{ analysis.dl_precision|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-success"
+style="width: {{ analysis.dl_precision|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>Recall</strong></td>
+<td>{{ analysis.dl_recall|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-info"
+style="width: {{ analysis.dl_recall|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>F1-Score</strong></td>
+<td>{{ analysis.dl_f1_score|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-warning"
+style="width: {{ analysis.dl_f1_score|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+<tr>
+<td><strong>IoU</strong></td>
+<td>{{ analysis.dl_iou|floatformat:4 }}</td>
+<td>
+<div class="progress">
+<div class="progress-bar bg-danger"
+style="width: {{ analysis.dl_iou|floatformat:0 }}%">
+</div>
+</div>
+</td>
+</tr>
+
+</tbody>
+</table>
+
+</div>
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="row">
+
+{% if analysis.flood_mask_image %}
+<div class="col-lg-6">
+
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0"><i class="fas fa-map"></i> Flood Extent Map</h5>
+</div>
+
+<div class="card-body text-center">
+<img src="{{ analysis.flood_mask_image.url }}"
+class="img-fluid result-image" alt="Flood Mask">
+</div>
+
+</div>
+
+</div>
+{% endif %}
+
+
+
+{% if analysis.overlay_image %}
+<div class="col-lg-6">
+
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0"><i class="fas fa-layer-group"></i> SAR + Flood Overlay</h5>
+</div>
+
+<div class="card-body text-center">
+<img src="{{ analysis.overlay_image.url }}"
+class="img-fluid result-image" alt="Overlay">
+</div>
+
+</div>
+
+</div>
+{% endif %}
+
+</div>
+
+
+
+<div class="row">
+<div class="col-12 text-center">
+
+<a href="{% url 'upload' %}" class="btn btn-primary btn-lg">
+<i class="fas fa-upload"></i>
+Analyze Another Image
+</a>
+
+</div>
+</div>
+
+{% endblock %}
