@@ -44,8 +44,12 @@
 
 <div align="center">
 
-<img src="YOUR_RESULT_IMAGE_1" width="45%" />
-<img src="YOUR_RESULT_IMAGE_2" width="45%" />
+<img width="896" height="530" alt="image" src="https://github.com/user-attachments/assets/2004166e-24bd-4d8f-8a4c-35b08030094f" />
+
+<img width="894" height="565" alt="image" src="https://github.com/user-attachments/assets/104149f4-0e57-4ac3-8de5-7ce3678a2ae8" />
+
+<img width="896" height="479" alt="image" src="https://github.com/user-attachments/assets/0b101d93-31a8-4dd5-8737-cc952467f6ca" />
+
 
 </div>
 
@@ -71,19 +75,7 @@
 
 ## 🧠 System Workflow
 ---
-SAR Data + NDVI
-↓
-Preprocessing (Noise Removal, Normalization)
-↓
-Feature Extraction (VV, VH, Ratio)
-↓
-U-Net → Flood Segmentation
-↓
-LSTM → Rainfall Prediction
-↓
-AI Alert Generator
-↓
-Dashboard Output
+<img width="1333" height="380" alt="image" src="https://github.com/user-attachments/assets/2095ad76-9828-4940-af6e-95fef5ebc57f" />
 ---
 
 ---
