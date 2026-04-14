@@ -1,4 +1,7 @@
-[![GitHub Repo stars](https://img.shields.io/github/stars/CodeWithXayush/your-repo?style=social)](https://github.com/mahavirgautam/saterlite-flood-detection)
+![Stars](https://img.shields.io/github/stars/mahavirgautam/Satellite-Flood-Detection?style=social)
+![Forks](https://img.shields.io/github/forks/mahavirgautam/Satellite-Flood-Detection?style=social)
+![Issues](https://img.shields.io/github/issues/mahavirgautam/Satellite-Flood-Detection)
+![Last Commit](https://img.shields.io/github/last-commit/mahavirgautam/Satellite-Flood-Detection)
 <div align="center">
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:1CB5E0,100:000046&height=260&section=header&text=Flood%20Monitoring%20System&fontSize=55&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Sentinel-1%20SAR%20%7C%20Deep%20Learning%20%7C%20AI%20Alerts&descAlignY=60&descSize=18" width="100%" />
