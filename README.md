@@ -33,11 +33,9 @@
 
 <div align="center">
 
-<img src="YOUR_POSTER_IMAGE_LINK_HERE" width="80%" />
+<img src="(https://github.com/mahavirgautam/Satellite-Flood-Detection/blob/main/Poster%20Grp%2042.pdf)" width="80%" />
 
 </div>
-
-👉 Replace above with your poster image (upload to GitHub → copy link)
 
 ---
 
@@ -71,3 +69,93 @@
 ---
 
 ## 🧠 System Workflow
+---
+SAR Data + NDVI
+↓
+Preprocessing (Noise Removal, Normalization)
+↓
+Feature Extraction (VV, VH, Ratio)
+↓
+U-Net → Flood Segmentation
+↓
+LSTM → Rainfall Prediction
+↓
+AI Alert Generator
+↓
+Dashboard Output
+---
+
+---
+
+# 💻 Tech Stack
+
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)
+![Keras](https://img.shields.io/badge/Keras-D00000?style=for-the-badge&logo=keras&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-%23white.svg?style=for-the-badge&logo=opencv&logoColor=black)
+![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)
+![Django](https://img.shields.io/badge/Django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white)
+
+---
+
+## 📈 Model Details
+
+### 🔹 U-Net Model
+- Input: SAR multi-channel images  
+- Output: Flood segmentation mask  
+- Loss: Binary Cross Entropy  
+- Optimizer: Adam  
+
+### 🔹 LSTM Model
+- Input: Time-series SAR features  
+- Output: Rainfall prediction  
+- Loss: MSE  
+
+---
+
+## 📁 Project Structure
+---
+├── data/
+├── models/
+├── notebooks/
+├── src/
+├── dashboard/
+├── results/
+├── README.md
+└── requirements.txt
+---
+
+---
+
+## 🌍 Real-World Impact
+
+💡 Helps disaster management teams  
+💡 Supports early flood warning  
+💡 Works even in bad weather  
+💡 Reduces damage to life & property  
+
+---
+
+## 🔮 Future Improvements
+
+🚀 Real-time API integration  
+🌐 Web dashboard deployment  
+📡 IoT integration  
+🧠 Transformer-based models  
+
+---
+
+## 👨‍💻 Team
+
+- Amit Kumar  
+- Ankit Raj  
+- Mahavir Gautam  
+- Ayush Kumar  
+
+---
+
+<div align="center">
+
+⭐ *Using AI + Satellite Data to solve real-world disasters*
+
+</div>
