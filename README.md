@@ -33,8 +33,8 @@
 
 <div align="center">
 
-<img src="<img width="1353" height="759" alt="image" src="https://github.com/user-attachments/assets/9357a8e1-0edb-4903-8930-5b866283219f" />
-" width="80%" />
+"<img width="1353" height="759" alt="image" src="https://github.com/user-attachments/assets/9357a8e1-0edb-4903-8930-5b866283219f" />
+"
 
 </div>
 
